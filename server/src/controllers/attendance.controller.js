@@ -5,46 +5,73 @@ const {
 } = require("../utils/calculateAttendance");
 
 
+const sameDate = (d1, d2) =>
+  new Date(d1).toDateString() === new Date(d2).toDateString();
+
 // ================= SCHOOL =================
 exports.markSchoolAttendance = async (req, res) => {
   try {
-    const today = new Date().toDateString();
+    const {isPresent,date}=req.body;
+    let userattend=await Attendance.findOne({user: req.user._id});
+     const targetDate = new Date(date);
+    if(!userattend){
+       userattend = await Attendance.create({
+        user: req.user._id,
+        totalClasses: 0,
+        attendedClasses: 0,
+        streak: 0,
+        presentDates: [],
+        absentDates: []
+      });
 
-    let record = await Attendance.findOne({
-      user: req.user._id,
-      date: today
-    });
+    }
+    const presentIndex = userattend.presentDates.findIndex(d =>
+      sameDate(d, targetDate)
+    );
 
-    if (record) {
-      return res.status(400).json({ message: "Attendance already marked" });
+    const absentIndex = userattend.absentDates.findIndex(d =>
+      sameDate(d, targetDate)
+    );
+
+    if (presentIndex !== -1) {
+      if (!isPresent) {
+        userattend.presentDates.splice(presentIndex, 1);
+        userattend.absentDates.push(targetDate);
+        userattend.attendedClasses -= 1;
+        userattend.streak = 0;
+      }
     }
 
-    const lastRecord = await Attendance.findOne({
-      user: req.user._id,
-      isPresent: true
-    }).sort({ date: -1 });
-
-    let streak = 0;
-    if (req.body.isPresent && lastRecord) {
-      const diff =
-        (new Date(today) - new Date(lastRecord.date)) /
-        (1000 * 60 * 60 * 24);
-
-      streak = diff === 1 ? lastRecord.schoolStreak + 1 : 1;
+    // ---------------- CASE 2: Already ABSENT ----------------
+    else if (absentIndex !== -1) {
+      if (isPresent) {
+        userattend.absentDates.splice(absentIndex, 1);
+        userattend.presentDates.push(targetDate);
+        userattend.attendedClasses += 1;
+        userattend.streak += 1;
+      }
     }
+    else{
 
-    record = await Attendance.create({
-      user: req.user._id,
-      date: today,
-      isPresent: req.body.isPresent,
-      schoolStreak: req.body.isPresent ? streak : 0
+     userattend.totalClasses += 1;
+
+      if (isPresent) {
+        userattend.presentDates.push(targetDate);
+        userattend.attendedClasses += 1;
+        userattend.streak += 1;
+      } else {
+        userattend.absentDates.push(targetDate);
+        userattend.streak = 0;
+      }
+    }
+ await userattend.save();
+
+    res.status(200).json({
+      message: "Attendance updated successfully",
+      attendance: userattend
     });
 
-    res.status(201).json({
-      success: true,
-      message: "Attendance marked",
-      streak: record.schoolStreak
-    });
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -54,7 +81,8 @@ exports.markSchoolAttendance = async (req, res) => {
 // ================= COLLEGE =================
 exports.markSubjectAttendance = async (req, res) => {
   try {
-    const { subjectName, isPresent } = req.body;
+    const { subjectName, isPresent, date } = req.body;
+    const targetDate = new Date(date);
 
     let attendance = await Attendance.findOne({ user: req.user._id });
 
@@ -74,18 +102,57 @@ exports.markSubjectAttendance = async (req, res) => {
         subjectName,
         totalClasses: 0,
         attendedClasses: 0,
-        streak: 0
+        streak: 0,
+        presentDates: [],
+        absentDates: []
       };
       attendance.subjects.push(subject);
     }
 
-    subject.totalClasses += 1;
+    // ensure arrays exist
+    subject.presentDates ||= [];
+    subject.absentDates ||= [];
 
-    if (isPresent) {
-      subject.attendedClasses += 1;
-      subject.streak += 1;
-    } else {
-      subject.streak = 0;
+    const presentIndex = subject.presentDates.findIndex(d =>
+      sameDate(d, targetDate)
+    );
+
+    const absentIndex = subject.absentDates.findIndex(d =>
+      sameDate(d, targetDate)
+    );
+
+    // -------- CASE 1: already PRESENT --------
+    if (presentIndex !== -1) {
+      if (!isPresent) {
+        subject.presentDates.splice(presentIndex, 1);
+        subject.absentDates.push(targetDate);
+        subject.attendedClasses -= 1;
+        subject.streak = 0;
+      }
+    }
+
+    // -------- CASE 2: already ABSENT --------
+    else if (absentIndex !== -1) {
+      if (isPresent) {
+        subject.absentDates.splice(absentIndex, 1);
+        subject.presentDates.push(targetDate);
+        subject.attendedClasses += 1;
+        subject.streak += 1;
+      }
+    }
+
+    // -------- CASE 3: NEW DATE --------
+    else {
+      subject.totalClasses += 1;
+
+      if (isPresent) {
+        subject.presentDates.push(targetDate);
+        subject.attendedClasses += 1;
+        subject.streak += 1;
+      } else {
+        subject.absentDates.push(targetDate);
+        subject.streak = 0;
+      }
     }
 
     await attendance.save();
@@ -102,7 +169,9 @@ exports.markSubjectAttendance = async (req, res) => {
       status: calculateStatus(percentage),
       streak: subject.streak
     });
+
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+

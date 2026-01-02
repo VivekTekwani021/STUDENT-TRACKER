@@ -4,6 +4,8 @@ const subjectAttendanceSchema = new mongoose.Schema({
   subjectName: String,
   totalClasses: { type: Number, default: 0 },
   attendedClasses: { type: Number, default: 0 },
+  presentDates:[{type:Date}],
+  absentDates:[{type:Date}],
   streak: { type: Number, default: 0 }
 });
 
@@ -14,20 +16,16 @@ const attendanceSchema = new mongoose.Schema(
       ref: "User",
       required: true
     },
-
-    // SCHOOL
-    date: {
-      type: Date
-    },
-    isPresent: {
-      type: Boolean
-    },
+//For school
+  totalClasses: { type: Number, default: 0 },
+  attendedClasses: { type: Number, default: 0 },
+  presentDates:[{type:Date}],
+  absentDates:[{type:Date}],
     schoolStreak: {
       type: Number,
       default: 0
     },
-
-    // COLLEGE
+//fOR COLLEGE
     subjects: [subjectAttendanceSchema]
   },
   { timestamps: true }
