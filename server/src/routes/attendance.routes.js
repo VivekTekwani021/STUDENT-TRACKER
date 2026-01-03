@@ -17,8 +17,6 @@ const { onboardingRequired } = require("../middleware/onboarding.middleware");
 router.post(
   "/school",
   protect,
-  onboardingRequired,
-  schoolOnly,
   markSchoolAttendance
 );
 
@@ -26,8 +24,6 @@ router.post(
 router.post(
   "/college",
   protect,
-  onboardingRequired,
-  collegeOnly,
   markSubjectAttendance
 );
 
