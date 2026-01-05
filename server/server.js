@@ -1,3 +1,5 @@
+console.log("🔥 SERVER RESTARTED AT", new Date());
+
 const dotenv = require("dotenv");
 dotenv.config();
 

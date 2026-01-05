@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const onboardingRoutes = require("./routes/onboarding.routes");
 const attendanceRoutes = require("./routes/attendance.routes");
+const learningRoutes = require("./routes/learning.routes");
 
 const authRoutes = require("./routes/auth.routes");
 
@@ -14,8 +15,14 @@ app.use("/api/auth", authRoutes);
 
 app.use("/api/onboarding", onboardingRoutes);
 app.use("/api/attendance", attendanceRoutes);
+app.use("/api/learning", learningRoutes);
+
+
 app.get("/", (req, res) => {
   res.send("Student Tracker Backend Running 🚀");
 });
 
 module.exports = app;
+
+
+

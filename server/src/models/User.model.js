@@ -35,7 +35,43 @@ const userSchema = new mongoose.Schema(
     isOnboardingComplete: {
       type: Boolean,
       default: false
+    }, 
+    learningHistory: [
+  {
+    topicName: {
+      type: String,
+      required: true
+    },
+
+    quizScore: {
+      type: Number,
+      default: 0
+    },
+
+    masteryStatus: {
+      type: String,
+      enum: ["Strong", "Average", "Weak"],
+      default: "Average"
+    },
+
+    completedAt: {
+      type: Date,
+      default: Date.now
     }
+  }
+],
+
+weakTopics: [
+  {
+    type: String
+  }
+],
+
+totalStudyTime: {
+  type: Number,
+  default: 0 // in minutes
+}
+
   },
   { timestamps: true }
 );

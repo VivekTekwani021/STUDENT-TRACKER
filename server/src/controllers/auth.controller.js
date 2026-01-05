@@ -3,10 +3,20 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 // Generate JWT
+// const generateToken = (id) => {
+//   return jwt.sign(const token = jwt.sign(
+//   { _id: user._id },
+//   process.env.JWT_SECRET,
+//   { expiresIn: "7d" }
+// );
+// )
+// };
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn:  "7d"
-  });
+  return jwt.sign(
+    { id },                    // ✅ ALWAYS use `id`
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
 };
 
 // REGISTER
